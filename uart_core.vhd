@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;-- declara os tipos std_logic, std_logic_vector e outros
 
-entity uart is
+entity uart_core is
 	port (
 		--interface com cpu
 		rst: in std_logic;-- reset (assíncrono)
@@ -18,9 +18,9 @@ entity uart is
 		tx: out std_logic;
 		rx: in std_logic-- a última porta não tem o ponto-e-vírgula
 	);
-end uart;
+end uart_core;
 
-architecture bhv of uart is
+architecture bhv of uart_core is
 --declare sinais internos da architecture aqui
 
 signal transmit_register: std_logic_vector(7 downto 0);
