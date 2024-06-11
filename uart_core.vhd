@@ -39,7 +39,6 @@ constant CLK_PER_BIT: natural := 8;
 signal start_tx: std_logic;-- inicie a transmissão
 signal tx_bit_count: std_logic_vector(3 downto 0);
 signal tx_count: std_logic_vector(3 downto 0);
-signal load_tx_shift_reg: std_logic;-- inicie o deslocamento do tx_shift_register
 
 --para simulação apenas!
 signal tx_state: string (1 to 5);
@@ -64,14 +63,12 @@ begin
 		tx_shift_register <= (others=>'0');
 		start_tx <= '0';
 		tx_bit_count <= (others=>'0');
-		load_tx_shift_reg <= '0';
 		data_sent <='0';
 	elsif(iack='1')then
 		data_sent <='0';
 	elsif(rising_edge(clk))then
-		load_tx_shift_reg<= wren;--atrasa um clock o wren
 		--carrega o shift register
-		if(load_tx_shift_reg='1' and start_tx='0')then
+		if(wren='1' and start_tx='0')then
 									-- stop & D(7 downto 0)    & start
 			tx_shift_register <= '1' & D & '0';
 			start_tx <= '1';
