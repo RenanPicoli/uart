@@ -136,14 +136,14 @@ begin
 
 	status_wren			<= all_periphs_wren(1);
 	--uart_wren			<= all_periphs_wren(0);
-	process(rst,all_periphs_wren(0),uart_data_sent)
+	process(rst,clk,all_periphs_wren(0),uart_data_sent)
 	begin
 		if(rst='1')then		
 			uart_wren <= '0';
-		elsif(all_periphs_wren(0)='1')then
-			uart_wren <= '1';
 		elsif(uart_data_sent='1')then
 			uart_wren <= '0';
+		elsif(rising_edge(clk) and all_periphs_wren(0)='1')then
+			uart_wren <= '1';
 		end if;
 	end process;
 	
