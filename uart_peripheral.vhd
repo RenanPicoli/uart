@@ -16,6 +16,7 @@ entity uart_peripheral is
 		IACK: in std_logic;--interrupt acknowledgement
 		IRQ: out std_logic;--interrupt request
 		---------PHY-----------
+		phy_clk: in std_logic;--bit clock (not transmitted)
         rx: in std_logic;
         tx: out std_logic
     );
@@ -31,8 +32,10 @@ architecture Behavioral of uart_peripheral is
             wren: in std_logic;
             rden: in std_logic;
             Q: out std_logic_vector(7 downto 0);
+			--INTERRUPT ACK
+			IACK: in std_logic;--resets all flags!
             data_sent: out std_logic;
-            data_received: buffer std_logic;
+            data_received: out std_logic;
             stop_error: out std_logic;
             tx: out std_logic;
             rx: in std_logic
@@ -79,25 +82,39 @@ architecture Behavioral of uart_peripheral is
     signal	uart_data_in: std_logic_vector(7 downto 0);
 	
 	signal status_wren:	std_logic;
-	signal status_rden:	std_logic;
+	signal status_rden:	std_logic;	
+	
+	signal transmit_register: std_logic_vector(7 downto 0);
 
 begin
+
+	--carrega o dado no transmit_register
+	process(rst,clk,all_periphs_wren(0),D)
+	begin
+		if(rst='1')then
+			transmit_register <= (others=>'0');
+		elsif(rising_edge(clk) and all_periphs_wren(0)='1')then
+			transmit_register <= D(7 downto 0);
+		end if;
+	end process;
+
     -- Instanciação do UART Core
     uart_inst: uart_core
         port map (
             rst => rst,
-            clk => clk,
+            clk => phy_clk,
             D => uart_data_in,
             wren => uart_wren,
             rden => uart_rden,
             Q => uart_data_out,
+			iack => iack,
             data_sent => uart_data_sent,
             data_received => uart_data_received,
             stop_error => uart_stop_error,
             tx => tx,
             rx => rx
         );
-	uart_data_in <= D(7 downto 0);
+	uart_data_in <= transmit_register;
 
     -- Registrador de Status
     process(clk, rst)
@@ -112,13 +129,23 @@ begin
     end process;
 	
 -------------------------- address decoder ---------------------------------------------------
-	all_periphs_output	<= (1 => status_reg,	0 => (31 downto 8=>'0')&uart_data_out);
+	all_periphs_output	<= (1 => status_reg,	0 => (31 downto 8=>'0') & uart_data_out);
 
 	status_rden			<= all_periphs_rden(1);
 	uart_rden			<= all_periphs_rden(0);
 
 	status_wren			<= all_periphs_wren(1);
-	uart_wren			<= all_periphs_wren(0);
+	--uart_wren			<= all_periphs_wren(0);
+	process(rst,all_periphs_wren(0),uart_data_sent)
+	begin
+		if(rst='1')then		
+			uart_wren <= '0';
+		elsif(all_periphs_wren(0)='1')then
+			uart_wren <= '1';
+		elsif(uart_data_sent='1')then
+			uart_wren <= '0';
+		end if;
+	end process;
 	
 	memory_map: address_decoder_memory_map
 	--N: word address width in bits
