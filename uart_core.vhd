@@ -70,9 +70,6 @@ begin
 		tx_shift_register <= (others=>'0');
 		start_tx <= '0';
 		tx_bit_count <= (others=>'0');
-		data_sent <='0';
-	elsif(iack='1')then
-		data_sent <='0';
 	elsif(rising_edge(clk))then
 		--carrega o shift register
 		if(wren='1' and tx_bit_count=x"0")then
@@ -80,7 +77,6 @@ begin
 			tx_shift_register <= '1' & D & '0';
 			start_tx <= '1';
 			tx_bit_count <= (others=>'0');
-			data_sent <='0';
 		--faz um deslocamento para a direita
 		elsif(start_tx = '1' and  tx_count=std_logic_vector(to_unsigned(CLK_PER_BIT-1,4)))then
 			tx_shift_register <= '1' & tx_shift_register(9 downto 1);
@@ -89,6 +85,20 @@ begin
 		elsif(start_tx = '1' and tx_bit_count=x"A")then--tx_bit_count=10
 			start_tx <= '0';
 			tx_bit_count <= (others=>'0');
+		end if;
+	end if;
+end process;
+
+process(rst,clk,wren,tx_count,tx_bit_count,iack)
+begin
+	if(rst='1' or iack='1')then
+		data_sent <='0';
+	elsif(rising_edge(clk))then
+		--carrega o shift register
+		if(wren='1' and tx_bit_count=x"0")then
+			data_sent <='0';
+		--encerra a transmissão
+		elsif(start_tx = '1' and tx_bit_count=x"A")then--tx_bit_count=10
 			data_sent <='1';
 		end if;
 	end if;
@@ -113,7 +123,7 @@ end process;
 
 tx <= tx_shift_register(0) when start_tx='1' else '1';
 
---PARA sIMULAÇÃO APENAS!
+--PARA SIMULAÇÃO APENAS!
 -- synthesis translate_off
 tx_state <=	"START"	when (start_tx='1' and tx_bit_count=x"0") else
 				"D0   "	when (start_tx='1' and tx_bit_count=x"1") else
@@ -136,20 +146,13 @@ begin
 	if(rst='1')then
 		start_rx <= '0';
 		rx_bit_count <= (others=>'0');
-		data_received <='0';
 		rx_shift_register <= (others=>'0');
 		previous_rx <= '1';
-		stop_error <= '0';
-	elsif(iack='1')then
-		stop_error <= '0';
-		data_received <='0';
 	elsif(rising_edge(clk))then
 		-- detecta a borda de descida do rx que incia a transmissão
 		if(rx_bit_count=x"0" and rx='0' and previous_rx='1')then
 			start_rx <= '1';
 			rx_bit_count <= (others=>'0');
-			data_received <='0';
-			stop_error <= '0';
 		--faz um deslocamento para a esquerda
 		--rx_count=CLK_PER_BIT/2-1 faz amostrar no meio do período do bit
 		elsif(start_rx = '1' and  rx_count=std_logic_vector(to_unsigned(CLK_PER_BIT/2-1,4)))then
@@ -160,6 +163,24 @@ begin
 		elsif(start_rx = '1' and rx_bit_count=x"A")then
 			start_rx <= '0';
 			rx_bit_count <= (others=>'0');
+		end if;
+		previous_rx <= rx;
+	end if;
+end process;
+
+process(rst,clk,tx_count,iack,start_rx,rx,previous_rx,rx_count,rx_bit_count,rx_shift_register)
+begin
+	if(rst='1' or iack='1')then
+		stop_error <= '0';
+		data_received <='0';
+	elsif(rising_edge(clk))then
+		-- detecta a borda de descida do rx que incia a transmissão
+		if(rx_bit_count=x"0" and rx='0' and previous_rx='1')then
+			data_received <='0';
+			stop_error <= '0';
+		--faz um deslocamento para a esquerda
+		--encerra a recepção
+		elsif(start_rx = '1' and rx_bit_count=x"A")then
 			data_received <='1';
 			--confere se o stop bit foi recebido corretamente
 			if(rx_shift_register(9)='1')then
@@ -168,7 +189,6 @@ begin
 				stop_error <= '1';
 			end if;
 		end if;
-		previous_rx <= rx;
 	end if;
 end process;
 
