@@ -50,6 +50,13 @@ signal rx_count: std_logic_vector(3 downto 0);
 
 --para simulação apenas!
 signal rx_state: string (1 to 5);
+--preserving signals during synthesis for debugging
+attribute preserve : boolean;
+attribute preserve of start_rx: signal is true;
+attribute preserve of start_tx: signal is true;
+attribute preserve of tx_shift_register: signal is true;
+attribute preserve of rx_shift_register: signal is true;
+attribute preserve of receive_register: signal is true;
 
 begin
 -- a partir daqui ponha concurrent assignments
@@ -57,7 +64,7 @@ begin
 --########### transmissão ###########
 
 --tx_shift_register carrega e começa a deslocar
-process(rst,clk,wren,tx_count,iack)
+process(rst,clk,wren,tx_count,tx_bit_count,iack)
 begin
 	if(rst='1')then
 		tx_shift_register <= (others=>'0');
@@ -68,7 +75,7 @@ begin
 		data_sent <='0';
 	elsif(rising_edge(clk))then
 		--carrega o shift register
-		if(wren='1' and start_tx='0')then
+		if(wren='1' and tx_bit_count=x"0")then
 									-- stop & D(7 downto 0)    & start
 			tx_shift_register <= '1' & D & '0';
 			start_tx <= '1';
@@ -124,7 +131,7 @@ tx_state <=	"START"	when (start_tx='1' and tx_bit_count=x"0") else
 
 --########### recepção ###########
 -- start_rx detecta o ínício de uma transmissão
-process(rst,clk,tx_count,iack)
+process(rst,clk,tx_count,iack,start_rx,rx,previous_rx,rx_count,rx_bit_count,rx_shift_register)
 begin
 	if(rst='1')then
 		start_rx <= '0';
@@ -137,9 +144,8 @@ begin
 		stop_error <= '0';
 		data_received <='0';
 	elsif(rising_edge(clk))then
-		previous_rx <= rx;
 		-- detecta a borda de descida do rx que incia a transmissão
-		if(start_rx='0' and rx='0' and previous_rx='1')then
+		if(rx_bit_count=x"0" and rx='0' and previous_rx='1')then
 			start_rx <= '1';
 			rx_bit_count <= (others=>'0');
 			data_received <='0';
@@ -162,6 +168,7 @@ begin
 				stop_error <= '1';
 			end if;
 		end if;
+		previous_rx <= rx;
 	end if;
 end process;
 
