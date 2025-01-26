@@ -57,6 +57,14 @@ attribute preserve of start_tx: signal is true;
 attribute preserve of tx_shift_register: signal is true;
 attribute preserve of rx_shift_register: signal is true;
 attribute preserve of receive_register: signal is true;
+attribute preserve of data_received: signal is true;
+attribute preserve of data_sent: signal is true;
+attribute preserve of stop_error: signal is true;
+attribute preserve of rx_count: signal is true;
+attribute preserve of rx_bit_count: signal is true;
+attribute preserve of tx_bit_count: signal is true;
+attribute preserve of tx_count: signal is true;
+attribute preserve of previous_rx: signal is true;
 
 begin
 -- a partir daqui ponha concurrent assignments
