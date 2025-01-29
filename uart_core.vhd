@@ -178,17 +178,13 @@ end process;
 
 process(rst,clk,tx_count,iack,start_rx,rx,previous_rx,rx_count,rx_bit_count,rx_shift_register)
 begin
-	if(rst='1' or iack='1')then
+	--if(rst='1' or iack='1')then
+	if(rst='1')then
 		stop_error <= '0';
 		data_received <='0';
 	elsif(rising_edge(clk))then
-		-- detecta a borda de descida do rx que incia a transmissão
-		if(rx_bit_count=x"0" and rx='0' and previous_rx='1')then
-			data_received <='0';
-			stop_error <= '0';
-		--faz um deslocamento para a esquerda
 		--encerra a recepção
-		elsif(start_rx = '1' and rx_bit_count=x"A")then
+		if(start_rx = '1' and rx_bit_count=x"A")then
 			data_received <='1';
 			--confere se o stop bit foi recebido corretamente
 			if(rx_shift_register(9)='1')then
@@ -196,6 +192,10 @@ begin
 			else
 				stop_error <= '1';
 			end if;
+		-- detecta a borda de descida do rx que incia a transmissão
+		elsif(rx_bit_count=x"0" and rx='0' and previous_rx='1')then
+			data_received <='0';
+			stop_error <= '0';
 		end if;
 	end if;
 end process;
