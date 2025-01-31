@@ -51,6 +51,7 @@ begin
     end process clock;
     
     rst<= '1', '0' after 52 us;
-    rx <= '1', '0' after 1 ms, '1' after 4800 us;
+    --rx <= '1', '0' after 1 ms, '1' after 4800 us;
+	 rx <=  '1', '0' after 10 ms, '1' after 11.23 ms, '0' after 11.665ms, '1' after 13.73ms, '0' after 14.153ms, '1' after 14.996ms, '0' after 15.405ms, '1' after 17.9ms;
   	iack <= '0';
 end bhv;
