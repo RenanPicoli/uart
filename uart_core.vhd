@@ -165,12 +165,13 @@ begin
 		--rx_count=CLK_PER_BIT/2-1 faz amostrar no meio do período do bit
 		elsif(start_rx = '1' and  rx_count=std_logic_vector(to_unsigned(CLK_PER_BIT/2-1,4)))then
 			rx_shift_register <= rx & rx_shift_register(9 downto 1);
+			--encerra a recepção se for o stop bit
+			if(rx_bit_count=x"9")then
+				start_rx <= '0';
+				rx_bit_count <= (others=>'0');
+			end if;
 		elsif(start_rx = '1' and  rx_count=std_logic_vector(to_unsigned(CLK_PER_BIT-1,4)))then
 			rx_bit_count <= std_logic_vector(to_unsigned(to_integer(unsigned(rx_bit_count))+1,4));
-		--encerra a recepção
-		elsif(start_rx = '1' and rx_bit_count=x"A")then
-			start_rx <= '0';
-			rx_bit_count <= (others=>'0');
 		end if;
 		previous_rx <= rx;
 	end if;
@@ -184,10 +185,10 @@ begin
 		data_received <='0';
 	elsif(rising_edge(clk))then
 		--encerra a recepção
-		if(start_rx = '1' and rx_bit_count=x"A")then
+		if(start_rx = '1' and rx_bit_count=x"9" and rx_count=x"3")then
 			data_received <='1';
 			--confere se o stop bit foi recebido corretamente
-			if(rx_shift_register(9)='1')then
+			if(rx='1')then
 				stop_error <= '0';
 			else
 				stop_error <= '1';
@@ -218,12 +219,13 @@ begin
 end process;
 
 --carrega o dado no receive_register
-process(rst,clk,start_rx,rx_bit_count)
+process(rst,clk,start_rx,rx_bit_count,rx_count)
 begin
 	if(rst='1')then
 		receive_register <= (others=>'0');
-	elsif(rising_edge(clk) and start_rx = '1' and rx_bit_count=x"A")then--rx_bit_count=10
-		receive_register <= rx_shift_register(8 downto 1);
+	elsif(rising_edge(clk) and start_rx = '1' and rx_bit_count=x"9" and rx_count=x"3")then--rx_bit_count=10
+		--estou gravando antes de shiftar para receber o stop bit!
+		receive_register <= rx_shift_register(9 downto 2);
 	end if;
 end process;
 
