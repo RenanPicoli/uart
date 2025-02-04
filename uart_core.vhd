@@ -179,8 +179,8 @@ end process;
 
 process(rst,clk,tx_count,iack,start_rx,rx,previous_rx,rx_count,rx_bit_count,rx_shift_register)
 begin
-	--if(rst='1' or iack='1')then
-	if(rst='1')then
+	if(rst='1' or iack='1')then
+	--if(rst='1')then
 		stop_error <= '0';
 		data_received <='0';
 	elsif(rising_edge(clk))then
