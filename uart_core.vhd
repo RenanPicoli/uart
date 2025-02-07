@@ -99,7 +99,7 @@ end process;
 
 process(rst,clk,wren,tx_count,tx_bit_count,iack)
 begin
-	if(rst='1' or iack='1')then
+	if(rst='1')then
 		data_sent <='0';
 	elsif(rising_edge(clk))then
 		--carrega o shift register
@@ -123,7 +123,7 @@ begin
 			else
 				tx_count <=std_logic_vector(to_unsigned(to_integer(unsigned(tx_count))+1,4));
 			end if;
-		else-- se start_tx='0'
+		else-- if start_tx='0'
 			tx_count <= (others=>'0');
 		end if;
 	end if;
